@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Money Tracker</title>
+  <link rel="manifest" href="manifest.json">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #ede7f6;
+      margin: 0;
+      padding: 20px;
+      text-align: center;
+    }
+    h1 { color: #6a1b9a; }
+    input, button {
+      padding: 10px;
+      margin: 5px;
+    }
+    ul { list-style: none; padding: 0; }
+    li {
+      background: #fff;
+      margin: 5px 0;
+      padding: 10px;
+      border-radius: 5px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    #total {
+      margin-top: 20px;
+      font-weight: bold;
+      color: #4b0082;
+    }
+    #message {
+      margin-top: 10px;
+      font-size: 1.2em;
+      font-weight: bold;
+    }
+    .remove-btn {
+      background: #d32f2f;
+      color: #fff;
+      border: none;
+      padding: 5px 10px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h1>💰 Money Tracker</h1>
+  <input id="amount" type="number" placeholder="Enter amount">
+  <button onclick="addTransaction()">Add</button>
+  <button onclick="resetTotal()">Reset</button>
+  <ul id="transactions"></ul>
+  <div id="total">Total: ₱0</div>
+  <div id="message"></div>
+
+  <script>
+    let transactions = [];
+    let total = 0;
+
+    function addTransaction() {
+      const amount = parseFloat(document.getElementById('amount').value);
+      if (!isNaN(amount) && amount > 0) {
+        transactions.push(amount);
+        total += amount;
+        renderTransactions();
+        document.getElementById('amount').value = '';
+        saveData();
+        checkMessage(); // only runs after a valid amount
+      }
+    }
+
+    function removeTransaction(index) {
+      total -= transactions[index];
+      transactions.splice(index, 1);
+      renderTransactions();
+      saveData();
+      checkMessage(); // only runs after a valid removal
+    }
+
+    function resetTotal() {
+      transactions = [];
+      total = 0;
+      renderTransactions();
+      saveData();
+      document.getElementById('message').textContent = ""; // clear message
+    }
+
+    function renderTransactions() {
+      const list = document.getElementById('transactions');
+      list.innerHTML = '';
+      transactions.forEach((t, i) => {
+        list.innerHTML += `
+          <li>
+            Transaction ${i+1}: ₱${t}
+            <button class="remove-btn" onclick="removeTransaction(${i})">Remove</button>
+          </li>`;
+      });
+      document.getElementById('total').textContent = `Total: ₱${total}`;
+    }
+
+    function checkMessage() {
+      const msg = document.getElementById('message');
+      if (total > 300) {
+        msg.textContent = "Kagasto simo!";
+        msg.style.color = "red";
+      } else if (total < 300 && total > 0) {
+        msg.textContent = "Kaya pani e tipid!";
+        msg.style.color = "green";
+      } else {
+        msg.textContent = ""; // no message at exactly 0 or 300
+      }
+    }
+
+    function saveData() {
+      localStorage.setItem('transactions', JSON.stringify(transactions));
+      localStorage.setItem('total', total);
+    }
+
+    window.onload = () => {
+      const saved = localStorage.getItem('transactions');
+      const savedTotal = localStorage.getItem('total');
+      if (saved) transactions = JSON.parse(saved);
+      if (savedTotal) total = parseFloat(savedTotal);
+      renderTransactions();
+      checkMessage();
+    };
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('service-worker.js');
+    }
+  </script>
+</body>
+</html>
